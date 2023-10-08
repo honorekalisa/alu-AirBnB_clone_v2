@@ -25,7 +25,8 @@ class TestDBStorage(unittest.TestCase):
 
     def test_user(self):
         """ Tests user """
-        user = User(name="jeff", email="hi@dauda.studio", password="testpassword")
+        user = User(name="jeff", email="hi@dauda.studio",
+                    password="testpassword")
         user.save()
         self.assertFalse(user.id in self.storage.all())
         self.assertEqual(user.name, "jeff")
@@ -56,7 +57,8 @@ class TestDBStorage(unittest.TestCase):
         city.state_id = state.id
         city.save()
 
-        user = User(name="Jeff", email="hi@dauda.studio", password="testpassword")
+        user = User(name="Jeff", email="hi@dauda.studio",
+                    password="testpassword")
         user.save()
 
         place = Place(name="Palace", number_rooms=4)
@@ -84,7 +86,8 @@ class TestDBStorage(unittest.TestCase):
         city.state_id = state.id
         city.save()
 
-        user = User(name="jeff", email="hi@dauda.studio", password="testpassword")
+        user = User(name="jeff", email="hi@dauda.studio",
+                    password="testpassword")
         user.save()
 
         place = Place(name="Palace", number_rooms=4)
