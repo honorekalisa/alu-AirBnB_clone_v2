@@ -1,26 +1,79 @@
-#!/usr/bin/python3
-# script to delete out-of-date archives.
-import os
-from fabric.api import *
+# Install Nginx
+package { 'nginx':
+  ensure => installed,
+}
 
-env.hosts = ["3.90.235.28", "35.172.227.41"]
+# Create necessary directories
+file { '/data/':
+  ensure => directory,
+  owner  => 'ubuntu',
+  group  => 'ubuntu',
+  recurse => true,
+}
 
+file { '/data/web_static/':
+  ensure => directory,
+  owner  => 'ubuntu',
+  group  => 'ubuntu',
+}
 
-def do_clean(number=0):
-    """
-        Function to delete out-of-date archives
-        Args:
-        number (int): number of archives to keep
-    """
-    number = 1 if int(number) == 0 else int(number)
+file { '/data/web_static/releases/':
+  ensure => directory,
+  owner  => 'ubuntu',
+  group  => 'ubuntu',
+}
 
-    archives = sorted(os.listdir("versions"))
-    [archives.pop() for i in range(number)]
-    with lcd("versions"):
-        [local("rm ./{}".format(a)) for a in archives]
+file { '/data/web_static/shared/':
+  ensure => directory,
+  owner  => 'ubuntu',
+  group  => 'ubuntu',
+}
 
-    with cd("/data/web_static/releases"):
-        archives = run("ls -tr").split()
-        archives = [a for a in archives if "web_static_" in a]
-        [archives.pop() for i in range(number)]
-        [run("rm -rf ./{}".format(a)) for a in archives]
+file { '/data/web_static/releases/test/':
+  ensure => directory,
+  owner  => 'ubuntu',
+  group  => 'ubuntu',
+}
+
+# Create a fake HTML file
+file { '/data/web_static/releases/test/index.html':
+  ensure  => file,
+  content => 'Test Page',
+  owner   => 'ubuntu',
+  group   => 'ubuntu',
+}
+
+# Create or recreate the symbolic link
+file { '/data/web_static/current':
+  ensure => link,
+  target => '/data/web_static/releases/test/',
+  owner  => 'ubuntu',
+  group  => 'ubuntu',
+  force  => true,
+}
+
+# Update Nginx configuration
+file_line { 'nginx_config':
+  path    => '/etc/nginx/sites-available/default',
+  line    => 'location /hbnb_static/ {',
+  match   => 'listen 80 default_server;',
+  after   => 'listen 80 default_server;',
+  notify  => Service['nginx'],
+  require => Package['nginx'],
+}
+
+file_line { 'nginx_config_alias':
+  path    => '/etc/nginx/sites-available/default',
+  line    => "\t\talias /data/web_static/current/;",
+  match   => 'location /hbnb_static/ {',
+  after   => 'location /hbnb_static/ {',
+  notify  => Service['nginx'],
+  require => Package['nginx'],
+}
+
+# Restart Nginx
+service { 'nginx':
+  ensure  => 'running',
+  enable  => true,
+  require => [File['/etc/nginx/sites-available/default'], File['/data/web_static/current']],
+}
